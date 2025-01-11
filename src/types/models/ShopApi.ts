@@ -1,36 +1,38 @@
-export interface Product {
+import { Price } from '..';
+
+export interface IProduct {
 	id: string;
 	description: string;
 	image: string;
 	title: string;
 	category: string;
-	price?: number;
+	price: Price | null;
 }
 
-export interface Basket {
-	items: Product[];
-	total: number;
+export interface IBasket {
+	items: IProduct[];
+	total: Price;
 }
 
-export interface Details {
+export interface IDetails {
 	payment: string;
 	address: string;
 }
 
-export interface Contacts {
+export interface IContacts {
 	email: string;
 	phone: string;
 }
 
-export interface Order extends Basket, Contacts, Details {}
+export interface IOrder extends IBasket, IContacts, IDetails {}
 
-export interface OrderResponse {
+export interface IOrderResponse {
 	id: string;
-	total: number;
+	total: Price;
 }
 
 export interface IShopAPI {
-	getProductList(): Promise<Product[]>;
-	getProduct(id: string): Promise<Product>;
-	createOrder(order: Order): Promise<OrderResponse>;
+	getProductList(): Promise<IProduct[]>;
+	getProduct(id: string): Promise<IProduct>;
+	createOrder(order: IOrder): Promise<IOrderResponse>;
 }

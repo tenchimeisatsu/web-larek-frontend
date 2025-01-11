@@ -1,4 +1,1 @@
-export interface IView<T> {
-    element: HTMLElement;
-    render(data?: Partial<T>): HTMLElement;
-}
+export type Price = number;

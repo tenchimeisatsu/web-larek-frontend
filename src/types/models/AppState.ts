@@ -1,6 +1,6 @@
-import { Basket, Contacts, Details, OrderResponse, Product } from './ShopApi';
+import { IBasket, IContacts, IDetails, IOrder, IProduct } from './ShopApi';
 
-export enum AppStateModals {
+export enum AppStateModal {
 	card = 'modal:card',
 	basket = 'modal:basket',
 	details = 'modal:details',
@@ -10,32 +10,24 @@ export enum AppStateModals {
 }
 
 export enum EventType {
-	closeModal = 'event:close',
+	closeModal = 'event:closeModal',
 	openCard = 'event:openCard',
 	openBasket = 'event:openBasket',
 	nextModal = 'event:nextModal',
-	addToBasket = 'event:addToBasket',
-	removeFromBasket = 'event:removeFromBasket'
+	updateBasket = 'event:updateBasket',
+	contactsError = 'event:contactError',
+	detailsError = 'event:detailsError',
 }
 
-export interface AppState {
-	productList: Product[];
-	selectedProduct?: Product;
-	basket?: Basket;
-	basketCounter: number;
-	contacts: Contacts;
-	details: Details;
-
-	openedModal: AppStateModals;
-
-	loadProductList(): Promise<void>;
-	createOrder(): Promise<OrderResponse>;
-
-	selectProduct(id: string): void;
-	addProduct(id: string): void;
-	removeProduct(id: string): void;
-	fillContacts(contacts: Partial<Contacts>): void;
-	fillDetails(details: Partial<Details>): void;
-
-	openModal(modal: AppStateModals): void;
+export interface IAppState {
+	updateProductList(productList: IProduct[]): void;
+	updateSelectedProduct(selectedProduct: IProduct): void;
+	updateBasket(basket: IBasket): void;
+	updateContacts(contacts: IContacts): void;
+	updateDetails(details: IDetails): void;
+	updateOpenedModal(modal: AppStateModal): void;
+	updateContactsError(contactError: string): void;
+	updateDetailsError(detailsError: string): void;
+	getBasketCounter(): number;
+	getOrder(): IOrder;
 }
