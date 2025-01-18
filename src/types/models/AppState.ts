@@ -17,6 +17,7 @@ export enum EventType {
 	updateBasket = 'event:updateBasket',
 	contactsError = 'event:contactError',
 	detailsError = 'event:detailsError',
+	getProductList = 'event:getProductList',
 }
 
 export interface IAppState {
@@ -30,4 +31,6 @@ export interface IAppState {
 	updateDetailsError(detailsError: string): void;
 	getBasketCounter(): number;
 	getOrder(): IOrder;
+	getProductList(): IProduct[];
+	getBasket(): IBasket;
 }

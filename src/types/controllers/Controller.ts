@@ -11,8 +11,8 @@ export interface IController {
 	fillContacts(contacts: Partial<IContacts>): void;
 	fillDetails(details: Partial<IDetails>): void;
 	clearBasket(): void;
-	validateContacts(contacts: Partial<IContacts>): void;
-	validateDetails(details: Partial<IDetails>): void;
+	validateContacts(contacts: Partial<IContacts>): boolean;
+	validateDetails(details: Partial<IDetails>): boolean;
 
 	setModal(modal: AppStateModal): void;
 }

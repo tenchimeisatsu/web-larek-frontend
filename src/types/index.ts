@@ -1,1 +1,1 @@
-export type Price = number;
+export type Price = number | null;

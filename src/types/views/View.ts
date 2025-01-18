@@ -8,5 +8,5 @@ export interface IModalView {
 }
 
 export interface IFormView {
-	isFilled(): void;
+	checkFilled(): void;
 }

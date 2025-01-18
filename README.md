@@ -72,7 +72,7 @@ yarn build
 - `private _broker: IEvents` — брокер событий
 - `private _productList: IProduct[]` — список товаров, пришедший из API
 - `private _selectedProduct?: IProduct` — карточка товара, выбранная пользователем
-- `private _basket?: IBasket` — корзина товаров
+- `private _basket: IBasket` — корзина товаров
 - `private _contacts: IContacts` — контакты пользователя
 - `private _details: IDetails` — детали заказа
 - `private _openedModal: AppStateModal` — открытое модальное окно
@@ -93,6 +93,8 @@ yarn build
 - `updateDetailsError(detailsError: string): void`
 - `getBasketCounter(): number` — возвращает количество товаров в корзине
 - `getOrder(): IOrder` — возвращает данные о заказе
+- `getProductList(): IProduct[]` — возвращает загруженный список товаров
+- `getBasket(): IBasket` — возвращает корзину
 
 ### Контроллер
 
@@ -117,8 +119,8 @@ yarn build
 - `fillContacts(contacts: Partial<IContacts>): void` — заполняет контакты в модели данными из представления
 - `fillDetails(details: Partial<IDetails>): void` — заполняет детали заказа в модели данными из представления
 - `clearBasket(): void` — очищает корзину в модели
-- `validateContacts(contacts: Partial<IContacts>):void` — валидирует контактные данные пришедшие из представления
-- `validateDetails(details: Partial<IDetails>):void` — валидирует данные о заказе пришедшие из представления
+- `validateContacts(contacts: Partial<IContacts>):boolean` — валидирует контактные данные пришедшие из представления
+- `validateDetails(details: Partial<IDetails>):boolean` — валидирует данные о заказе пришедшие из представления
 - `setModal(modal: AppStateModal): void` — устанавливает активное модельное окно в модели
 
 ### API
@@ -208,7 +210,7 @@ yarn build
 
 ##### Методы
 
-- `isFilled(): void` — проверяет заполнена ли форма и переключает кнопку
+- `checkFilled(): void` — проверяет заполнена ли форма и переключает кнопку
 
 #### Класс `ContactsFormModalView`:
 
@@ -216,7 +218,7 @@ yarn build
 
 ##### Методы
 
-- `isFilled(): void` — проверяет заполнена ли форма и переключает кнопку
+- `checkFilled(): void` — проверяет заполнена ли форма и переключает кнопку
 
 #### Класс `SuccessModalView`:
 
@@ -241,6 +243,7 @@ yarn build
 - updateBasket — обновление корзины
 - contactsError — ошибка заполнения контактной информации
 - detailsError — ошибка заполнения данных о заказе
+- getProductList — получение списка товаров
 
 ## Интерфейсы
 
@@ -288,6 +291,13 @@ yarn build
 
 - `id` — уникальный идентификатор заказа
 - `total` — стоимость заказа
+
+#### Интерфейс `IProductListResponse`
+
+Описывает ответ сервера с данными о списке товаров:
+
+- `total` — общее количество товаров
+- `items` — список товаров
 
 #### Интерфейс `IShopAPI`
 

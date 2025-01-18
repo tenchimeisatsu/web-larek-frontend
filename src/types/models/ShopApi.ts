@@ -6,7 +6,7 @@ export interface IProduct {
 	image: string;
 	title: string;
 	category: string;
-	price: Price | null;
+	price: Price;
 }
 
 export interface IBasket {
@@ -31,8 +31,13 @@ export interface IOrderResponse {
 	total: Price;
 }
 
+export interface IProductListResponse {
+	total: number;
+	items: IProduct[];
+}
+
 export interface IShopAPI {
-	getProductList(): Promise<IProduct[]>;
+	getProductList(): Promise<IProductListResponse>;
 	getProduct(id: string): Promise<IProduct>;
 	createOrder(order: IOrder): Promise<IOrderResponse>;
 }
