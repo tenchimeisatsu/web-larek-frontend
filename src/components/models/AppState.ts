@@ -9,6 +9,7 @@ import {
 	IContacts,
 	IDetails,
 	IOrder,
+	IOrderResponse,
 } from '../../types/models/ShopApi';
 import { IEvents } from '../base/events';
 
@@ -22,6 +23,7 @@ export class AppState implements IAppState {
 	private _openedModal: AppStateModal;
 	private _contactsError?: string;
 	private _detailsError?: string;
+	private _orderResponse?: IOrderResponse;
 
 	constructor(broker: IEvents) {
 		this._broker = broker;
@@ -42,7 +44,6 @@ export class AppState implements IAppState {
 		this._openedModal = AppStateModal.none;
 		this._contactsError = undefined;
 		this._detailsError = undefined;
-		// TODO: проверить реализацию
 	}
 
 	updateProductList(productList: IProduct[]): void {
@@ -52,7 +53,13 @@ export class AppState implements IAppState {
 
 	updateSelectedProduct(selectedProduct: IProduct): void {
 		this._selectedProduct = selectedProduct;
-		this._broker.emit(EventType.openCard, this._selectedProduct);
+		this._broker.emit(EventType.openCard, {
+			product: this._selectedProduct,
+			inBasket:
+				this.getBasket().items.findIndex(
+					(item) => item.id === this._selectedProduct.id
+				) > -1,
+		});
 	}
 
 	updateBasket(basket: IBasket): void {
@@ -76,11 +83,11 @@ export class AppState implements IAppState {
 	updateOpenedModal(modal: AppStateModal): void {
 		this._openedModal = modal;
 		const event =
-			modal === AppStateModal.card
-				? EventType.openCard
-				: modal === AppStateModal.basket
+			modal === AppStateModal.basket
 				? EventType.openBasket
-				: 'Error';
+				: modal === AppStateModal.none
+				? EventType.closeModal
+				: EventType.nextModal;
 		this._broker.emit(event, { modal: this._openedModal });
 	}
 
@@ -96,6 +103,11 @@ export class AppState implements IAppState {
 		this._broker.emit(EventType.detailsError, {
 			detailsError: this._detailsError,
 		});
+	}
+
+	updateOrderResponse(orderResponse: IOrderResponse): void {
+		this._orderResponse = orderResponse;
+		this._broker.emit(EventType.successOrder, this._orderResponse);
 	}
 
 	getBasketCounter(): number {
@@ -116,9 +128,5 @@ export class AppState implements IAppState {
 
 	getBasket(): IBasket {
 		return this._basket;
-	}
-
-	getState(): IAppState {
-		return this;
 	}
 }

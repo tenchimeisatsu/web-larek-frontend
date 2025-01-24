@@ -1,9 +1,9 @@
 import { AppStateModal } from '../models/AppState';
-import { IContacts, IDetails, IOrderResponse } from '../models/ShopApi';
+import { IContacts, IDetails } from '../models/ShopApi';
 
 export interface IController {
 	loadProductList(): Promise<void>;
-	createOrder(): Promise<IOrderResponse>;
+	createOrder(): Promise<void>;
 
 	selectProduct(id: string): void;
 	addProduct(id: string): void;

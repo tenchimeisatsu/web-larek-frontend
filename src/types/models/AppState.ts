@@ -1,4 +1,11 @@
-import { IBasket, IContacts, IDetails, IOrder, IProduct } from './ShopApi';
+import {
+	IBasket,
+	IContacts,
+	IDetails,
+	IOrder,
+	IOrderResponse,
+	IProduct,
+} from './ShopApi';
 
 export enum AppStateModal {
 	card = 'modal:card',
@@ -18,6 +25,7 @@ export enum EventType {
 	contactsError = 'event:contactError',
 	detailsError = 'event:detailsError',
 	getProductList = 'event:getProductList',
+	successOrder = 'event:successOrder',
 }
 
 export interface IAppState {
@@ -29,6 +37,7 @@ export interface IAppState {
 	updateOpenedModal(modal: AppStateModal): void;
 	updateContactsError(contactError: string): void;
 	updateDetailsError(detailsError: string): void;
+	updateOrderResponse(orderResponse: IOrderResponse): void;
 	getBasketCounter(): number;
 	getOrder(): IOrder;
 	getProductList(): IProduct[];

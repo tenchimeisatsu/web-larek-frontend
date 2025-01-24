@@ -4,7 +4,6 @@ import {
 	IBasket,
 	IContacts,
 	IDetails,
-	IOrderResponse,
 	IProduct,
 	IShopAPI,
 } from '../../types/models/ShopApi';
@@ -24,9 +23,9 @@ export class Controller implements IController {
 		this._state.updateProductList((await productList).items);
 	}
 
-	async createOrder(): Promise<IOrderResponse> {
+	async createOrder(): Promise<void> {
 		const order = this._state.getOrder();
-		return this._api.createOrder(order);
+		this._state.updateOrderResponse(await this._api.createOrder(order));
 	}
 
 	selectProduct(id: string): void {

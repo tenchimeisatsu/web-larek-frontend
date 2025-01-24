@@ -78,6 +78,7 @@ yarn build
 - `private _openedModal: AppStateModal` — открытое модальное окно
 - `private _contactsError?: string` — текст ошибки ввода контактных данных
 - `private _detailsError?: string` — текст ошибки ввода деталей заказа
+- `private _orderResponse?: IOrderResponse` — ответ сервера о заказе
 
 ##### Методы
 
@@ -91,6 +92,7 @@ yarn build
 - `updateOpenedModal(modal: AppStateModal): void`
 - `updateContactsError(contactError: string): void`
 - `updateDetailsError(detailsError: string): void`
+- `updateOrderResponse(orderResponse: IOrderResponse): void`
 - `getBasketCounter(): number` — возвращает количество товаров в корзине
 - `getOrder(): IOrder` — возвращает данные о заказе
 - `getProductList(): IProduct[]` — возвращает загруженный список товаров
@@ -112,7 +114,7 @@ yarn build
 ##### Методы
 
 - `loadProductList(): Promise<void>` — загружает список товаров и обновляет модель
-- `createOrder(): Promise<IOrderResponse>` — создает заказ через API
+- `createOrder(): Promise<void>` — создает заказ через API
 - `selectProduct(id: string): void` — устанавливает в модели выбранную карточку
 - `addProduct(id: string): void` — добавляет товар в корзину модели
 - `removeProduct(id: string): void` — удаляет товар из корзины модели
@@ -122,6 +124,7 @@ yarn build
 - `validateContacts(contacts: Partial<IContacts>):boolean` — валидирует контактные данные пришедшие из представления
 - `validateDetails(details: Partial<IDetails>):boolean` — валидирует данные о заказе пришедшие из представления
 - `setModal(modal: AppStateModal): void` — устанавливает активное модельное окно в модели
+- `private _findProduct(id: string): IProduct` — метод реализации для поиска конкретного товара в массиве товаров
 
 ### API
 
@@ -154,13 +157,13 @@ yarn build
 
 ##### Поля
 
-- `protected element: HTMLElement` — элемент, которым манипулирует представление
+- `element: HTMLElement` — элемент, которым манипулирует представление
 - `protected broker: IEvents` — брокер событий
 - `protected controller: IController` — контроллер
 
 ##### Методы
 
-- `render(data?: Partial<T>): void` — отображает данные в элементе
+- `abstract render(data?: Partial<T>): void` — отображает данные в элементе
 
 #### Класс `ModalView<T>`:
 
@@ -173,12 +176,11 @@ yarn build
 
 #### Класс `ProductListView`:
 
-класс, наследующий `View<ProductView[]>`. Конструктор помимо родительских принимает поле `isCompact: boolean` и `productView: ProductView`. Класс отвечает за отображение списка товаров.
+класс, наследующий `View<IProduct[]>`. Конструктор помимо родительских принимает поле `isCompact: boolean`. Класс отвечает за отображение списка товаров.
 
 ##### Поля
 
-- `isCompact: boolean` — флаг переключающее компактное и полное отображение карточек товара
-- `productView: ProductView` — представление для отображения одной карточки
+- `_isCompact: boolean` — флаг переключающее компактное и полное отображение карточек товара
 
 #### Класс `ProductView`:
 
@@ -186,43 +188,50 @@ yarn build
 
 ##### Поля
 
-- `isCompact: boolean` — флаг переключающее компактное и полное отображение карточки товара
+- `_isCompact: boolean` — флаг переключающее компактное и полное отображение карточки товара
 
 #### Класс `BasketCounterView`:
 
-класс, наследующий `View<number>`. Конструктор и поля аналогичны родительским. Отвечает за отображение счетчика товаров в корзине.
+класс, наследующий `View<{ counter: number }>`. Конструктор и поля аналогичны родительским. Отвечает за отображение счетчика товаров в корзине.
 
 #### Класс `ProductModalView`:
 
 класс, наследующий `ModalView<IProduct>`. Конструктор и поля аналогичны родительским. Отвечает за отображение модального окна карточки товара.
 
-#### Класс `BasketModalView`:
-
-класс, наследующий `ModalView<IBasket>`. Конструктор помимо родительских принимает поле `listView: ProductListView`. Отвечает за отображение модального окна корзины.
-
 ##### Поля
 
-- `private _listView: ProductListView` — представление для отображения списка товаров
+- `private _inBasket: boolean` — сигнализирует в карточке, что товар в корзине
+
+##### Методы
+
+- `private _renderButton(button: HTMLButtonElement, addButtonHandler: () => void, nextModalHandler: () => void): void` — метод реализации отрабатывающий отрисовку кнопки и ее хендлеры.
+
+#### Класс `BasketModalView`:
+
+класс, наследующий `ModalView<IBasket>`. Конструктор и поля аналогичны родительским. Отвечает за отображение модального окна корзины.
 
 #### Класс `DetailsFormModalView`:
 
-класс, наследующий `ModalView<IDetails>` и реализующий интерфейс `IFormView`. Конструктор и поля аналогичны родительским. Отвечает за отображение модального окна деталей о заказе.
+класс, наследующий `ModalView<void>` и реализующий интерфейс `IFormView`. Конструктор и поля аналогичны родительским. Отвечает за отображение модального окна деталей о заказе.
 
 ##### Методы
 
 - `checkFilled(): void` — проверяет заполнена ли форма и переключает кнопку
+- `private _altButtonHandler(buttons: HTMLButtonElement[], toggleElement: number):void ` — реализует механизм выбора одну из двух кнопок
+- `private _createDetails(): IDetails` — создает данные о заказе из формы
 
 #### Класс `ContactsFormModalView`:
 
-класс, наследующий `ModalView<IContacts>` и реализующий интерфейс `IFormView`. Конструктор и поля аналогичны родительским. Отвечает за отображение модального окна с контактной информацией.
+класс, наследующий `ModalView<void>` и реализующий интерфейс `IFormView`. Конструктор и поля аналогичны родительским. Отвечает за отображение модального окна с контактной информацией.
 
 ##### Методы
 
 - `checkFilled(): void` — проверяет заполнена ли форма и переключает кнопку
+- `private _createContacts(): IContacts ` — создает контактные данные из формы
 
 #### Класс `SuccessModalView`:
 
-класс, наследующий `ModalView<IBasket>`. Конструктор и поля аналогичны родительским. Отвечает за отображение модального окна подтверждения успешного оформления заказа.
+класс, наследующий `ModalView<IOrderResponse>`. Конструктор и поля аналогичны родительским. Отвечает за отображение модального окна подтверждения успешного оформления заказа.
 
 ### Брокер событий
 
@@ -244,6 +253,7 @@ yarn build
 - contactsError — ошибка заполнения контактной информации
 - detailsError — ошибка заполнения данных о заказе
 - getProductList — получение списка товаров
+- successOrder — успешное создание заказа
 
 ## Интерфейсы
 
@@ -303,6 +313,6 @@ yarn build
 
 Описывает взаимодействие с API:
 
-- `getProductList()` — получение списка продуктов
-- `getProduct(id: string)` — получение продукта по идентификатору
-- `createOrder(order: Order)` — отправка заказа на сервер
+- `getProductList(): Promise<IProductListResponse>` — получение списка продуктов
+- `getProduct(id: string): Promise<IProduct>` — получение продукта по идентификатору
+- `createOrder(order: Order): Promise<IOrderResponse>` — отправка заказа на сервер
