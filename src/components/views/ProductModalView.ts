@@ -1,74 +1,68 @@
-import { IController } from '../../types/controllers/Controller';
-import { EventType, AppStateModal } from '../../types/models/AppState';
-import { IProduct, IBasket } from '../../types/models/ShopApi';
+import { EventType } from '../../types/models/AppState';
+import { IProduct } from '../../types/models/ShopApi';
 import { CDN_URL } from '../../utils/constants';
-import { createElement, setCategory, priceWithUnit } from '../../utils/utils';
+import { setCategory, priceWithUnit, ensureElement } from '../../utils/utils';
 import { IEvents } from '../base/events';
 import { ModalView } from './View';
 
 export class ProductModalView extends ModalView<IProduct> {
-	private _inBasket: boolean;
+	private _cardImage: HTMLImageElement;
+	private _cardCategory: HTMLElement;
+	private _cardTitle: HTMLElement;
+	private _cardText: HTMLElement;
+	private _cardPrice: HTMLElement;
+	private _button: HTMLButtonElement;
+	private _productId: string;
+	private _buyHandler: () => void;
+	private _nextHandler: () => void;
 
-	constructor(broker: IEvents, controller: IController) {
-		super(broker, controller);
-		this._inBasket = false;
-		this.broker.on(
-			EventType.openCard,
-			(data: { product: IProduct; inBasket: boolean }) => {
-				this._inBasket = data.inBasket;
-				this.render(data.product);
-				this.element.classList.add('modal_active');
-				document
-					.querySelector('.page__wrapper')
-					.classList.add('page__wrapper_locked');
-			}
+	constructor(
+		broker: IEvents,
+		element: HTMLElement,
+		template: HTMLElement,
+		onClick: (id: string) => void
+	) {
+		super(broker, element, template, onClick);
+		this._productId = '';
+		this._buyHandler = () => this.onClick(this._productId);
+		this._nextHandler = () => this.nextModal();
+		this._cardImage = ensureElement<HTMLImageElement>(
+			'.card__image',
+			this.template
 		);
+		this._cardCategory = ensureElement<HTMLElement>(
+			'.card__category',
+			this.template
+		);
+		this._cardTitle = ensureElement<HTMLElement>('.card__title', this.template);
+		this._cardText = ensureElement<HTMLElement>('.card__text', this.template);
+		this._cardPrice = ensureElement<HTMLElement>('.card__price', this.template);
+		this._button = ensureElement<HTMLButtonElement>('.button', this.template);
+		this.inBasket(false);
 	}
 
 	nextModal(): void {
-		this.controller.setModal(AppStateModal.basket);
-		this.element.classList.remove('modal_active');
+		this.broker.emit(EventType.openBasket);
 	}
-	render(data?: Partial<IProduct>): void {
-		this.element.querySelector('.modal__content').remove();
-		const content = createElement('div');
-		content.classList.add('modal__content');
-		const card = document
-			.querySelector('.card_full')
-			.cloneNode(true) as HTMLElement;
-		const image = card.querySelector('.card__image') as HTMLImageElement;
-		image.src = CDN_URL + data.image;
-		setCategory(card.querySelector('.card__category'), data.category);
-		card.querySelector('.card__title').textContent = data.title;
-		card.querySelector('.card__text').textContent = data.description;
-		card.querySelector('.card__price').textContent = priceWithUnit(data.price);
-		const button = card.querySelector('.button') as HTMLButtonElement;
-		const addButtonHandler = () => this.controller.addProduct(data.id);
-		const nextModalHandler = () => this.nextModal();
-		this.broker.on(EventType.updateBasket, (b: { basket: IBasket }) => {
-			this._inBasket =
-				b.basket.items.findIndex((item) => item.id === data.id) > -1;
-
-			this._renderButton(button, addButtonHandler, nextModalHandler);
-		});
-		this._renderButton(button, addButtonHandler, nextModalHandler);
-		content.appendChild(card);
-		this.element.querySelector('.modal__container').appendChild(content);
+	render(data?: Partial<IProduct>): HTMLElement {
+		this._cardImage.src = CDN_URL + data.image;
+		setCategory(this._cardCategory, data.category);
+		this._cardTitle.textContent = data.title;
+		this._cardText.textContent = data.description;
+		this._cardPrice.textContent = priceWithUnit(data.price);
+		this._productId = data.id;
+		return this.template;
 	}
 
-	private _renderButton(
-		button: HTMLButtonElement,
-		addButtonHandler: () => void,
-		nextModalHandler: () => void
-	): void {
-		if (this._inBasket) {
-			button.textContent = 'В корзину';
-			button.removeEventListener('click', addButtonHandler);
-			button.addEventListener('click', nextModalHandler);
+	inBasket(inBasket: boolean) {
+		if (inBasket) {
+			this._button.textContent = 'В корзину';
+			this._button.removeEventListener('click', this._buyHandler);
+			this._button.addEventListener('click', this._nextHandler);
 		} else {
-			button.textContent = 'Купить';
-			button.removeEventListener('click', nextModalHandler);
-			button.addEventListener('click', addButtonHandler);
+			this._button.textContent = 'Купить';
+			this._button.removeEventListener('click', this._nextHandler);
+			this._button.addEventListener('click', this._buyHandler);
 		}
 	}
 }

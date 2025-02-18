@@ -6,7 +6,3 @@ export interface IModalView {
 	nextModal(): void;
 	closeModal(): void;
 }
-
-export interface IFormView {
-	checkFilled(): void;
-}

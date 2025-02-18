@@ -17,6 +17,7 @@ export enum AppStateModal {
 }
 
 export enum EventType {
+	openModal = 'event:openModal',
 	closeModal = 'event:closeModal',
 	openCard = 'event:openCard',
 	openBasket = 'event:openBasket',
@@ -26,6 +27,9 @@ export enum EventType {
 	detailsError = 'event:detailsError',
 	getProductList = 'event:getProductList',
 	successOrder = 'event:successOrder',
+	createOrder = 'event:createOrder',
+	changeDetailsForm = 'event:changeDetailsForm',
+	changeContactsForm = 'event:changeContactsForm',
 }
 
 export interface IAppState {

@@ -1,49 +1,66 @@
-import { IController } from '../../types/controllers/Controller';
-import { AppStateModal } from '../../types/models/AppState';
 import { IProduct } from '../../types/models/ShopApi';
 import { CDN_URL } from '../../utils/constants';
-import { priceWithUnit, setCategory } from '../../utils/utils';
+import { ensureElement, priceWithUnit, setCategory } from '../../utils/utils';
 import { IEvents } from '../base/events';
 import { View } from './View';
 
 export class ProductView extends View<IProduct> {
 	private _isCompact: boolean;
+	private _cardTitle: HTMLElement;
+	private _cardPrice: HTMLElement;
+	private _itemIndex?: HTMLElement;
+	private _deleteButton?: HTMLButtonElement;
+	private _cardCategory?: HTMLElement;
+	private _cardImage?: HTMLImageElement;
+	private _productId: string;
 
-	constructor(broker: IEvents, controller: IController, isCompact: boolean) {
-		super(broker, controller);
+	constructor(
+		broker: IEvents,
+		element: HTMLElement,
+		isCompact: boolean,
+		onClick: (id: string) => void
+	) {
+		super(broker, element, onClick);
 		this._isCompact = isCompact;
+		this._productId = '';
+		this._cardTitle = ensureElement<HTMLElement>('.card__title', this.element);
+		this._cardPrice = ensureElement<HTMLElement>('.card__price', this.element);
 
-		const template = document.querySelector(
-			this._isCompact ? '#card-basket' : '#card-catalog'
-		) as HTMLTemplateElement;
-		this.element = template.content.cloneNode(true) as HTMLElement;
+		if (isCompact) {
+			this._itemIndex = ensureElement<HTMLElement>(
+				'.basket__item-index',
+				this.element
+			);
+			this._deleteButton = ensureElement<HTMLButtonElement>(
+				'.basket__item-delete',
+				this.element
+			);
+			this._deleteButton.addEventListener('click', () =>
+				onClick(this._productId)
+			);
+		} else {
+			this.element.addEventListener('click', () => onClick(this._productId));
+			this._cardCategory = ensureElement<HTMLElement>(
+				'.card__category',
+				this.element
+			);
+			this._cardImage = ensureElement<HTMLImageElement>(
+				'.card__image',
+				this.element
+			);
+		}
 	}
 
-	render(data?: Partial<IProduct & { index: number }>): void {
-		this.element.querySelector('.card__title').textContent = data.title;
-		this.element.querySelector('.card__price').textContent = priceWithUnit(
-			data.price
-		);
+	render(data?: Partial<IProduct & { index: number }>): HTMLElement {
+		this._productId = data.id;
+		this._cardTitle.textContent = data.title;
+		this._cardPrice.textContent = priceWithUnit(data.price);
 		if (this._isCompact) {
-			this.element.querySelector('.basket__item-index').textContent =
-				data.index.toString();
-			this.element
-				.querySelector('.basket__item-delete')
-				.addEventListener('click', () =>
-					this.controller.removeProduct(data.id)
-				);
+			this._itemIndex.textContent = data.index.toString();
 		} else {
-			this.element
-				.querySelector('.gallery__item')
-				.addEventListener('click', () => {
-					this.controller.selectProduct(data.id);
-					this.controller.setModal(AppStateModal.card);
-				});
-			setCategory(this.element.querySelector('.card__category'), data.category);
-			const image = this.element.querySelector(
-				'.card__image'
-			) as HTMLImageElement;
-			image.src = CDN_URL + data.image;
+			setCategory(this._cardCategory, data.category);
+			this._cardImage.src = CDN_URL + data.image;
 		}
+		return this.element;
 	}
 }

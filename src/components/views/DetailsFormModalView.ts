@@ -1,74 +1,58 @@
-import { IController } from '../../types/controllers/Controller';
 import { AppStateModal, EventType } from '../../types/models/AppState';
-import { IDetails } from '../../types/models/ShopApi';
-import { IFormView } from '../../types/views/View';
+import { ensureAllElements, ensureElement } from '../../utils/utils';
 import { IEvents } from '../base/events';
 import { ModalView } from './View';
 
-export class DetailsFormModalView extends ModalView<void> implements IFormView {
-	constructor(broker: IEvents, controller: IController) {
-		super(broker, controller);
-		this.element.setAttribute('id', 'detailsModal');
-		this.render();
+export class DetailsFormModalView extends ModalView<{ detailsError: string }> {
+	private _altButtons: HTMLButtonElement[];
+	private _input: HTMLInputElement;
+	private _orderButton: HTMLButtonElement;
+	private _formErrors: HTMLElement;
+
+	constructor(broker: IEvents, element: HTMLElement, template: HTMLElement) {
+		super(broker, element, template);
+		this._altButtons = ensureAllElements<HTMLButtonElement>(
+			'.button_alt',
+			this.template
+		);
+		this._input = ensureElement<HTMLInputElement>(
+			'.form__input',
+			this.template
+		);
+		this._orderButton = ensureElement<HTMLButtonElement>(
+			'.order__button',
+			this.template
+		);
+		this._formErrors = ensureElement<HTMLElement>(
+			'.form__errors',
+			this.template
+		);
+		this._altButtons[0].addEventListener('click', () => {
+			this._altButtonHandler(this._altButtons, 0);
+		});
+		this._altButtons[1].addEventListener('click', () => {
+			this._altButtonHandler(this._altButtons, 1);
+		});
+		this._input.addEventListener('input', () => this._changeFormHandler());
+		this._orderButton.addEventListener('click', (e) => {
+			e.preventDefault();
+			this.nextModal();
+		});
 	}
 
 	nextModal(): void {
-		this.controller.setModal(AppStateModal.contacts);
-		this.element.classList.remove('modal_active');
+		this.broker.emit(EventType.nextModal, { modal: AppStateModal.contacts });
 	}
 
-	render(): void {
-		const template = document.querySelector('#order') as HTMLTemplateElement;
-		const form = template.content.cloneNode(true) as HTMLFormElement;
-		const altButtons = Array.from(
-			form.querySelectorAll('.button_alt')
-		) as HTMLButtonElement[];
-		altButtons[0].addEventListener('click', () => {
-			this._altButtonHandler(altButtons, 0);
-			this.checkFilled.bind(this)();
-		});
-		altButtons[1].addEventListener('click', () => {
-			this._altButtonHandler(altButtons, 1);
-			this.checkFilled.bind(this)();
-		});
-		form
-			.querySelector('.form__input')
-			.addEventListener('input', this.checkFilled.bind(this));
-		const orderButton = form.querySelector(
-			'.order__button'
-		) as HTMLButtonElement;
-		this.broker.on(
-			EventType.detailsError,
-			(error: { detailsError: string }) => {
-				orderButton.disabled = true;
-				form.querySelector('.form__errors').textContent = error.detailsError;
-			}
-		);
-		orderButton.addEventListener('click', (e) => {
-			e.preventDefault();
-			const details = this._createDetails();
-			this.controller.fillDetails(details);
-			if (this.controller.validateDetails(details)) {
-				this.nextModal();
-			}
-		});
-		this.element.querySelector('.modal__content').appendChild(form);
-	}
-
-	checkFilled(): void {
-		this.element.querySelector('.form__errors').textContent = '';
-		const checkedButton = this.element.querySelector('.button_alt-active');
-		const input = this.element.querySelector(
-			'.form__input'
-		) as HTMLInputElement;
-		const orderButton = this.element.querySelector(
-			'.order__button'
-		) as HTMLButtonElement;
-		if (input.value !== '' && checkedButton) {
-			orderButton.disabled = false;
+	render(error: { detailsError: string }): HTMLElement {
+		if (error.detailsError) {
+			this._formErrors.textContent = error.detailsError;
+			this._orderButton.disabled = true;
 		} else {
-			orderButton.disabled = true;
+			this._formErrors.textContent = '';
+			this._orderButton.disabled = false;
 		}
+		return this.element;
 	}
 
 	private _altButtonHandler(
@@ -79,19 +63,18 @@ export class DetailsFormModalView extends ModalView<void> implements IFormView {
 		buttons[buttons.length - toggleElement - 1].classList.remove(
 			'button_alt-active'
 		);
+		this._changeFormHandler();
 	}
 
-	private _createDetails(): IDetails {
-		const paymentType = this.element
-			.querySelector('.button_alt-active')
-			.getAttribute('name');
-		const addressInput = this.element.querySelector(
-			'.form__input'
-		) as HTMLInputElement;
-		const address = addressInput.value;
-		return {
+	private _changeFormHandler(): void {
+		const activeButton = this._altButtons.find((b) =>
+			b.classList.contains('button_alt-active')
+		);
+		const paymentType = activeButton ? activeButton.getAttribute('name') : null;
+		const address = this._input.value;
+		this.broker.emit(EventType.changeDetailsForm, {
 			payment: paymentType,
 			address: address,
-		};
+		});
 	}
 }

@@ -1,80 +1,57 @@
-import { IController } from '../../types/controllers/Controller';
 import { EventType, AppStateModal } from '../../types/models/AppState';
-import { IContacts } from '../../types/models/ShopApi';
-import { IFormView } from '../../types/views/View';
+import { ensureAllElements, ensureElement } from '../../utils/utils';
 import { IEvents } from '../base/events';
 import { ModalView } from './View';
 
-export class ContactsFormModalView
-	extends ModalView<void>
-	implements IFormView
-{
-	constructor(broker: IEvents, controller: IController) {
-		super(broker, controller);
-		this.element.setAttribute('id', 'contactsModal');
-		this.render();
-	}
+export class ContactsFormModalView extends ModalView<{
+	contactsError: string;
+}> {
+	private _inputs: HTMLInputElement[];
+	private _button: HTMLButtonElement;
+	private _formErrors: HTMLElement;
 
-	render(): void {
-		const template = document.querySelector('#contacts') as HTMLTemplateElement;
-		const form = template.content.cloneNode(true) as HTMLFormElement;
-		const inputs = Array.from(
-			form.querySelectorAll('.form__input')
-		) as HTMLInputElement[];
-		inputs.forEach((input) =>
-			input.addEventListener('input', this.checkFilled.bind(this))
+	constructor(broker: IEvents, element: HTMLElement, template: HTMLElement) {
+		super(broker, element, template);
+		this._inputs = ensureAllElements<HTMLInputElement>(
+			'.form__input',
+			this.template
 		);
-
-		const orderButton = form.querySelector('.button') as HTMLButtonElement;
-		this.broker.on(
-			EventType.detailsError,
-			(error: { detailsError: string }) => {
-				orderButton.disabled = true;
-				form.querySelector('.form__errors').textContent = error.detailsError;
-			}
+		this._button = ensureElement<HTMLButtonElement>('.button', this.template);
+		this._formErrors = ensureElement<HTMLElement>(
+			'.form__errors',
+			this.template
 		);
-		orderButton.addEventListener('click', (e) => {
+		this._inputs.forEach((input) =>
+			input.addEventListener('input', () => this._changeFormHandler())
+		);
+		this._button.addEventListener('click', (e) => {
 			e.preventDefault();
-			const contacts = this._createContacts();
-			this.controller.fillContacts(contacts);
-			if (this.controller.validateContacts(contacts)) {
-				this.controller.createOrder();
-				this.controller.clearBasket();
-				this.nextModal();
-			}
+			this.nextModal();
 		});
-
-		this.element.querySelector('.modal__content').appendChild(form);
 	}
 
 	nextModal(): void {
-		this.controller.setModal(AppStateModal.success);
-		this.element.classList.remove('modal_active');
+		this.broker.emit(EventType.nextModal, { modal: AppStateModal.success });
+		this.broker.emit(EventType.createOrder);
 	}
 
-	checkFilled(): void {
-		this.element.querySelector('.form__errors').textContent = '';
-		const inputs = Array.from(
-			this.element.querySelectorAll('.form__input')
-		) as HTMLInputElement[];
-		const orderButton = this.element.querySelector(
-			'.button'
-		) as HTMLButtonElement;
-		if (inputs.every((input) => input.value !== '')) {
-			orderButton.disabled = false;
+	render(error: { contactsError: string }): HTMLElement {
+		console.log(error);
+		if (error.contactsError) {
+			this._formErrors.textContent = error.contactsError;
+			this._button.disabled = true;
 		} else {
-			orderButton.disabled = true;
+			this._formErrors.textContent = '';
+			this._button.disabled = false;
 		}
+		return this.element;
 	}
 
-	private _createContacts(): IContacts {
-		const inputs = Array.from(
-			this.element.querySelectorAll('.form__input')
-		) as HTMLInputElement[];
-		const data = inputs.map((input) => input.value);
-		return {
+	private _changeFormHandler(): void {
+		const data = this._inputs.map((input) => input.value);
+		this.broker.emit(EventType.changeContactsForm, {
 			email: data[0],
 			phone: data[1],
-		};
+		});
 	}
 }

@@ -62,21 +62,11 @@ export class Controller implements IController {
 	}
 
 	fillContacts(contacts: Partial<IContacts>): void {
-		if (this.validateContacts(contacts)) {
-			this._state.updateContacts(contacts as IContacts);
-		} else {
-			this._state.updateContactsError(
-				'Контактные данные заполнены не до конца'
-			);
-		}
+		this._state.updateContacts(contacts as IContacts);
 	}
 
 	fillDetails(details: Partial<IDetails>): void {
-		if (this.validateDetails(details)) {
-			this._state.updateDetails(details as IDetails);
-		} else {
-			this._state.updateDetailsError('Данные о заказе заполнены не до конца');
-		}
+		this._state.updateDetails(details as IDetails);
 	}
 
 	clearBasket(): void {
@@ -84,23 +74,6 @@ export class Controller implements IController {
 			items: [],
 			total: null,
 		});
-	}
-
-	validateContacts(contacts: Partial<IContacts>): boolean {
-		return (
-			contacts.email !== undefined &&
-			contacts.email !== '' &&
-			contacts.phone !== undefined &&
-			contacts.phone !== ''
-		);
-	}
-
-	validateDetails(details: Partial<IDetails>): boolean {
-		return (
-			details.payment !== undefined &&
-			details.address !== undefined &&
-			details.address !== ''
-		);
 	}
 
 	setModal(modal: AppStateModal): void {
