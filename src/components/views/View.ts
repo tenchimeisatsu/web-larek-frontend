@@ -46,11 +46,11 @@ export abstract class ModalView<T> extends View<T> implements IModalView {
 		this.broker.emit(EventType.closeModal);
 	}
 	openModal(): void {
-		this.applyTemplate();
+		this._applyTemplate();
 		this.element.classList.add('modal_active');
 		this.broker.emit(EventType.openModal);
 	}
-	private applyTemplate(): void {
+	private _applyTemplate(): void {
 		const oldContent = ensureElement<HTMLElement>(
 			'.modal__content',
 			this.element

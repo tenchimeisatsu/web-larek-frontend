@@ -33,6 +33,8 @@ export enum EventType {
 }
 
 export interface IAppState {
+	inBasket: boolean;
+
 	updateProductList(productList: IProduct[]): void;
 	updateSelectedProduct(selectedProduct: IProduct): void;
 	updateBasket(basket: IBasket): void;

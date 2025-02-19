@@ -54,7 +54,8 @@ yarn build
 
 ---
 
-В проекте реализуется **MVC** (Model-View-Controller) архитектура с применением паттерна проектирования "Наблюдатель" (Observer). С помощью брокера событий обеспечивается связь между моделью и представлением. Это архитектурный паттерн, используемый для разделения приложения на три ключевые компоненты, что улучшает структуру и поддерживаемость кода.
+В проекте реализуется **MVP** (Model-View-Presenter) – это архитектурный паттерн, используемый для разделения логики представления, обработки данных и бизнес-логики в приложении. Он является эволюцией паттерна MVC (Model-View-Controller) и обеспечивает более четкое разделение ответственности между компонентами.
+Связь между моделью и представлением обеспечивается брокером событий, частично реализующий паттерн проектирования Наблюдатель (Observer).
 
 ### Модель
 
@@ -97,10 +98,15 @@ yarn build
 - `getOrder(): IOrder` — возвращает данные о заказе
 - `getProductList(): IProduct[]` — возвращает загруженный список товаров
 - `getBasket(): IBasket` — возвращает корзину
+- `get inBasket(): boolean` — геттер, проверяющий находится ли `_selectedProduct` в корзине
+- `private _validateDetails(details: IDetails): string` — вспомогательный метод, проверяющий детали информации о заказе. Возвращает текст ошибки или пустую строку
+- `private _validateContacts(contacts: IContacts): string` — вспомогательный метод, проверяющий контактную информацию о заказе. Возвращает текст ошибки или пустую строку
 
-### Контроллер
+### Презентер
 
 ---
+
+События отправляются в представлениях и модели. Все слушатели этих событий находятся в **index.ts**.
 
 #### Класс `Controller`:
 
@@ -121,8 +127,6 @@ yarn build
 - `fillContacts(contacts: Partial<IContacts>): void` — заполняет контакты в модели данными из представления
 - `fillDetails(details: Partial<IDetails>): void` — заполняет детали заказа в модели данными из представления
 - `clearBasket(): void` — очищает корзину в модели
-- `validateContacts(contacts: Partial<IContacts>):boolean` — валидирует контактные данные пришедшие из представления
-- `validateDetails(details: Partial<IDetails>):boolean` — валидирует данные о заказе пришедшие из представления
 - `setModal(modal: AppStateModal): void` — устанавливает активное модельное окно в модели
 - `private _findProduct(id: string): IProduct` — метод реализации для поиска конкретного товара в массиве товаров
 
@@ -149,89 +153,135 @@ yarn build
 
 ---
 
-Связь между классами и версткой, а также подписка на события во всех классах происходит в конструкторе.
-
 #### Класс `View<T>`:
 
-абстрактный класс реализующий интерфейс `IView<T>`. В конструкторе принимает объект типа `IEvents` и `IController`. Это общий класс от которого наследуются все представления.
+абстрактный класс реализующий интерфейс `IView<T>`. В конструкторе принимает объект типа `IEvents`, `HTMLElement` и опционально функцию-хэндлер. Это общий класс от которого наследуются все представления.
 
 ##### Поля
 
 - `element: HTMLElement` — элемент, которым манипулирует представление
 - `protected broker: IEvents` — брокер событий
-- `protected controller: IController` — контроллер
+- `protected onClick?: (data?: any) => void` — опциональный хэндлер для обработки событий нажатия
 
 ##### Методы
 
-- `abstract render(data?: Partial<T>): void` — отображает данные в элементе
+- `abstract render(data?: Partial<T>): HTMLElement` — отображает данные в элементе
 
 #### Класс `ModalView<T>`:
 
-абстрактный класс наследующий `View<T>` и реализующий интерфейс `IModalView`. Конструктор и поля аналогичны родительскому `View<T>`. Общий класс, от которого наследуются все модальные окна.
+абстрактный класс наследующий `View<T>` и реализующий интерфейс `IModalView`. Конструктор и поля аналогичны родительскому `View<T>`, а также шаблон, на основе которого строится модальные окна . Общий класс, от которого наследуются все модальные окна.
+
+##### Поля
+
+- `template: HTMLElement` — шаблон модального окна
 
 ##### Методы
 
 - `abstract nextModal(): void` — переключает на следующее модальное окно
-- `closeModal(): void` — закрывает активное модальное окно
+- `closeModal(): void` — закрывает модальное окно
+- `openModal(): void` — открывает модальное окно
+- `private _applyTemplate(): void` — применяет шаблон модального окна
 
 #### Класс `ProductListView`:
 
-класс, наследующий `View<IProduct[]>`. Конструктор помимо родительских принимает поле `isCompact: boolean`. Класс отвечает за отображение списка товаров.
+класс, наследующий `View<never>`. Конструктору не требуется хэндлер, остальное аналогично родительскому `items: HTMLElement[]`. Класс отвечает за отображение списка товаров.
 
 ##### Поля
 
-- `_isCompact: boolean` — флаг переключающее компактное и полное отображение карточек товара
+- `items: HTMLElement[]` — список отрисованных представлений информации о товаре
 
 #### Класс `ProductView`:
 
-класс, наследующий `View<IProduct>`. Конструктор помимо родительских принимает поле `isCompact: boolean`. Класс отвечает за отображение карточки товара.
+класс, наследующий `View<IProduct>`. Конструктору требуется хэндлер. Класс отвечает за отображение карточки товара.
 
 ##### Поля
 
-- `_isCompact: boolean` — флаг переключающее компактное и полное отображение карточки товара
+- `private _isCompact: boolean` — флаг переключающее компактное и полное отображение карточки товара
+- `private _cardTitle: HTMLElement` — название товара
+- `private _cardPrice: HTMLElement` — цена товара
+- `private _itemIndex?: HTMLElement` — номер товара в корзине
+- `private _deleteButton?: HTMLButtonElement` — кнопка удаления товара из корзины
+- `private _cardCategory?: HTMLElement` — категория товара
+- `private _cardImage?: HTMLImageElement` — изображение товара
+- `private _productId: string` — идентификатор товара
 
 #### Класс `BasketCounterView`:
 
-класс, наследующий `View<{ counter: number }>`. Конструктор и поля аналогичны родительским. Отвечает за отображение счетчика товаров в корзине.
-
-#### Класс `ProductModalView`:
-
-класс, наследующий `ModalView<IProduct>`. Конструктор и поля аналогичны родительским. Отвечает за отображение модального окна карточки товара.
+класс, наследующий `View<{ counter: number }>`. Конструктору нужен хэндлер. Отвечает за отображение счетчика товаров в корзине.
 
 ##### Поля
 
-- `private _inBasket: boolean` — сигнализирует в карточке, что товар в корзине
+- `private _basketCounter: HTMLElement` — счетчик корзины
+
+#### Класс `ProductModalView`:
+
+класс, наследующий `ModalView<IProduct>`. Конструктору нужен хэндлер. Отвечает за отображение модального окна карточки товара.
+
+##### Поля
+
+- `private _cardImage: HTMLImageElement` — изображение товара
+- `private _cardCategory: HTMLElement` — категория товара
+- `private _cardTitle: HTMLElement` — название товара
+- `private _cardText: HTMLElement` — описание товара
+- `private _cardPrice: HTMLElement` — цена товара
+- `private _button: HTMLButtonElement` — основная кнопка модального окна
+- `private _productId: string` — идентификатор товара
+- `private _buyHandler: () => void` — обработчик для добавления товара в корзину
+- `private _nextHandler: () => void` — обработчик для перехода в корзину
 
 ##### Методы
 
-- `private _renderButton(button: HTMLButtonElement, addButtonHandler: () => void, nextModalHandler: () => void): void` — метод реализации отрабатывающий отрисовку кнопки и ее хендлеры.
+- `inBasket(inBasket: boolean)` — метод переключающий кнопку
 
 #### Класс `BasketModalView`:
 
-класс, наследующий `ModalView<IBasket>`. Конструктор и поля аналогичны родительским. Отвечает за отображение модального окна корзины.
+класс, наследующий `ModalView<IBasket>`. Конструктору не нужен хэндлер. Отвечает за отображение модального окна корзины.
+
+##### Поля
+
+- `private _list: HTMLElement` — список товарок в корзине
+- `private _basketButton: HTMLButtonElement` — основная кнопка
+- `private _basketPrice: HTMLElement` — общая цена товаров к корзине
+- `items?: HTMLElement[]` — отрисованные карточки товаров в корзине
 
 #### Класс `DetailsFormModalView`:
 
-класс, наследующий `ModalView<void>` и реализующий интерфейс `IFormView`. Конструктор и поля аналогичны родительским. Отвечает за отображение модального окна деталей о заказе.
+класс, наследующий `ModalView<{ detailsError: string }>`. Конструктору не требуется хэндлер. Отвечает за отображение модального окна деталей о заказе.
+
+##### Поля
+
+- `private _altButtons: HTMLButtonElement[]` — кнопки для выбора способа оплаты
+- `private _input: HTMLInputElement` — поле ввода
+- `private _orderButton: HTMLButtonElement` — основная кнопка
+- `private _formErrors: HTMLElement` — текст ошибки
 
 ##### Методы
 
-- `checkFilled(): void` — проверяет заполнена ли форма и переключает кнопку
-- `private _altButtonHandler(buttons: HTMLButtonElement[], toggleElement: number):void ` — реализует механизм выбора одну из двух кнопок
-- `private _createDetails(): IDetails` — создает данные о заказе из формы
+- `private _altButtonHandler(buttons: HTMLButtonElement[], toggleElement: number): void` — реализует механизм выбора одну из двух кнопок
+- `private _changeFormHandler(): void` — обработчик события изменения формы
 
 #### Класс `ContactsFormModalView`:
 
-класс, наследующий `ModalView<void>` и реализующий интерфейс `IFormView`. Конструктор и поля аналогичны родительским. Отвечает за отображение модального окна с контактной информацией.
+класс, наследующий `ModalView<{contactsError: string;}>`. Конструктору не требуется хэндлер. Отвечает за отображение модального окна с контактной информацией.
+
+##### Поля
+
+- `private _inputs: HTMLInputElement[]` — поля ввода формы
+- `private _button: HTMLButtonElement` — основная кнопка
+- `private _formErrors: HTMLElement` — текст ошибки
 
 ##### Методы
 
-- `checkFilled(): void` — проверяет заполнена ли форма и переключает кнопку
-- `private _createContacts(): IContacts ` — создает контактные данные из формы
+- `private _changeFormHandler(): void` — обработчик события изменения формы
 
 #### Класс `SuccessModalView`:
 
-класс, наследующий `ModalView<IOrderResponse>`. Конструктор и поля аналогичны родительским. Отвечает за отображение модального окна подтверждения успешного оформления заказа.
+класс, наследующий `ModalView<IOrderResponse>`. Конструктору не требуется хэндлер. Отвечает за отображение модального окна подтверждения успешного оформления заказа.
+
+##### Поля
+
+- `private _successParagraph: HTMLElement` — текст сообщения об успешном заказе
+- `private _button: HTMLButtonElement` — основная кнопка
 
 ### Брокер событий
 
@@ -254,6 +304,9 @@ yarn build
 - detailsError — ошибка заполнения данных о заказе
 - getProductList — получение списка товаров
 - successOrder — успешное создание заказа
+- createOrder — создание заказа
+- changeDetailsForm — изменение формы деталей о заказе
+- changeContactsForm — изменение формы контактной информации
 
 ## Интерфейсы
 
