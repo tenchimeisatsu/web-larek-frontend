@@ -120,15 +120,16 @@ yarn build
 ##### Методы
 
 - `loadProductList(): Promise<void>` — загружает список товаров и обновляет модель
-- `createOrder(): Promise<void>` — создает заказ через API
+- `createOrderResponse(): Promise<IOrderResponse>` — создает заказ через API
+- `createOrder(): Promise<void>` — устанавливает в модели успешный ответ от сервера
 - `selectProduct(id: string): void` — устанавливает в модели выбранную карточку
 - `addProduct(id: string): void` — добавляет товар в корзину модели
 - `removeProduct(id: string): void` — удаляет товар из корзины модели
 - `fillContacts(contacts: Partial<IContacts>): void` — заполняет контакты в модели данными из представления
 - `fillDetails(details: Partial<IDetails>): void` — заполняет детали заказа в модели данными из представления
-- `clearBasket(): void` — очищает корзину в модели
+- `clearOrder(): void` — очищает всю информацию о заказе в модели
 - `setModal(modal: AppStateModal): void` — устанавливает активное модельное окно в модели
-- `private _findProduct(id: string): IProduct` — метод реализации для поиска конкретного товара в массиве товаров
+- `private _findProduct(id: string): IProduct | null` — метод реализации для поиска конкретного товара в массиве товаров
 
 ### API
 
@@ -243,6 +244,14 @@ yarn build
 - `private _basketButton: HTMLButtonElement` — основная кнопка
 - `private _basketPrice: HTMLElement` — общая цена товаров к корзине
 - `items?: HTMLElement[]` — отрисованные карточки товаров в корзине
+
+#### Класс `PageView`:
+
+класс, наследующий `View<never>`. Конструктор родительский без хэндлера. Включает или выключает прокрутку страницы в зависимости от активности модального окна.
+
+##### Методы
+
+- `set lock(active: boolean)` — сеттер включающий и отключающий прокрутку
 
 #### Класс `DetailsFormModalView`:
 

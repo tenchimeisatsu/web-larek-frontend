@@ -4,6 +4,7 @@ import {
 	IBasket,
 	IContacts,
 	IDetails,
+	IOrderResponse,
 	IProduct,
 	IShopAPI,
 } from '../../types/models/ShopApi';
@@ -23,9 +24,14 @@ export class Controller implements IController {
 		this._state.updateProductList((await productList).items);
 	}
 
-	async createOrder(): Promise<void> {
+	async createOrderResponse(): Promise<IOrderResponse> {
 		const order = this._state.getOrder();
-		this._state.updateOrderResponse(await this._api.createOrder(order));
+		const orderResponse = await this._api.createOrder(order);
+		return orderResponse;
+	}
+
+	async createOrder(orderResponse: IOrderResponse): Promise<void> {
+		this._state.updateOrderResponse(orderResponse);
 	}
 
 	selectProduct(id: string): void {
@@ -46,18 +52,10 @@ export class Controller implements IController {
 
 	removeProduct(id: string): void {
 		const basket = this._state.getBasket();
-		const productIndex = basket.items.findIndex((p) => p.id === id);
-		const newBasket: IBasket =
-			productIndex > -1
-				? {
-						items: [
-							...basket.items.slice(0, productIndex),
-							...basket.items.slice(productIndex + 1),
-						],
-
-						total: basket.total - this._findProduct(id).price,
-				  }
-				: basket;
+		const newBasket: IBasket = {
+			items: basket.items.filter((p) => p.id !== id),
+			total: basket.total - basket.items.find((p) => p.id === id).price,
+		};
 		this._state.updateBasket(newBasket);
 	}
 
@@ -69,18 +67,19 @@ export class Controller implements IController {
 		this._state.updateDetails(details as IDetails);
 	}
 
-	clearBasket(): void {
+	clearOrder(): void {
 		this._state.updateBasket({
 			items: [],
 			total: null,
 		});
+		this._state.updateOrderResponse(undefined);
 	}
 
 	setModal(modal: AppStateModal): void {
 		this._state.updateOpenedModal(modal);
 	}
 
-	private _findProduct(id: string): IProduct {
+	private _findProduct(id: string): IProduct | null {
 		const productList = this._state.getProductList();
 		return productList.find((p) => p.id === id);
 	}

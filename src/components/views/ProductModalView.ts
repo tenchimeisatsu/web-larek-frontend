@@ -49,6 +49,11 @@ export class ProductModalView extends ModalView<IProduct> {
 		setCategory(this._cardCategory, data.category);
 		this._cardTitle.textContent = data.title;
 		this._cardText.textContent = data.description;
+		if (!data.price) {
+			this._button.disabled = true;
+		} else {
+			this._button.disabled = false;
+		}
 		this._cardPrice.textContent = priceWithUnit(data.price);
 		this._productId = data.id;
 		return this.template;

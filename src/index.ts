@@ -6,6 +6,7 @@ import { BasketCounterView } from './components/views/BasketCounterView';
 import { BasketModalView } from './components/views/BasketModalView';
 import { ContactsFormModalView } from './components/views/ContactsFormModalView';
 import { DetailsFormModalView } from './components/views/DetailsFormModalView';
+import { PageView } from './components/views/PageView';
 import { ProductListView } from './components/views/ProductListView';
 import { ProductModalView } from './components/views/ProductModalView';
 import { ProductView } from './components/views/ProductView';
@@ -20,7 +21,7 @@ import {
 	IProduct,
 } from './types/models/ShopApi';
 import { API_URL } from './utils/constants';
-import { cloneTemplate } from './utils/utils';
+import { cloneTemplate, ensureAllElements, ensureElement } from './utils/utils';
 
 const broker = new EventEmitter();
 const state = new AppState(broker);
@@ -29,7 +30,7 @@ const controller = new Controller(state, api);
 const gallery = document.querySelector('.gallery') as HTMLElement;
 const listView = new ProductListView(broker, gallery);
 const modal = document.querySelector('#modal-container') as HTMLElement;
-const pageWrapper = document.querySelector('.page__wrapper') as HTMLElement;
+const pageWrapper = new PageView(broker, ensureElement('.page__wrapper'));
 const counterButton = document.querySelector(
 	'.header__basket'
 ) as HTMLButtonElement;
@@ -51,12 +52,8 @@ broker.on(EventType.getProductList, (list: IProduct[]) => {
 	listView.render();
 });
 
-broker.on(EventType.openModal, () =>
-	pageWrapper.classList.add('page__wrapper_locked')
-);
-broker.on(EventType.closeModal, () =>
-	pageWrapper.classList.remove('page__wrapper_locked')
-);
+broker.on(EventType.openModal, () => (pageWrapper.lock = true));
+broker.on(EventType.closeModal, () => (pageWrapper.lock = false));
 
 const cardView = new ProductModalView(
 	broker,
@@ -155,9 +152,12 @@ broker.on(EventType.contactsError, (error: { contactsError: string }) =>
 	contactsView.render(error)
 );
 
-broker.on(EventType.createOrder, () => controller.createOrder());
+broker.on(EventType.createOrder, async () => {
+	const orderResponse = await controller.createOrderResponse();
+	controller.createOrder(orderResponse);
+});
 
 broker.on(EventType.successOrder, (data: IOrderResponse) => {
 	successView.render(data);
-	controller.clearBasket();
+	controller.clearOrder();
 });

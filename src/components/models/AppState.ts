@@ -105,7 +105,9 @@ export class AppState implements IAppState {
 
 	updateOrderResponse(orderResponse: IOrderResponse): void {
 		this._orderResponse = orderResponse;
-		this._broker.emit(EventType.successOrder, this._orderResponse);
+		if (orderResponse) {
+			this._broker.emit(EventType.successOrder, this._orderResponse);
+		}
 	}
 
 	getBasketCounter(): number {
